@@ -1,7 +1,6 @@
 // server/src/resolver.js
-var kue = require('kue')
-   
 
+var kue = require('kue')
 
 const chats = []
 const CHAT_CHANNEL = 'CHAT_CHANNEL'
@@ -29,11 +28,7 @@ const resolvers = {
         message
       }
 
-      // setInterval(function (){
-      //   newJob('Send_Email', chat);
-      // }, 100);
 
-   
       var jobs = kue.createQueue({
         prefix: 'jobs',
         redis: {
@@ -41,47 +36,61 @@ const resolvers = {
           host: '127.0.0.1'
         }
       });
-      
-      newJob('Send_Email', chat);
+
+      newJob('Process_New_Message_For_Delivery', chat);
 
 
-      function newJob (name, chat){
-        name = name || 'Default_Name';
+      function newJob(name, chat) {
+
         var job = jobs.create('new job', {
           name: name,
           chat: chat
         });
 
-      
         job
-          .on('complete', function (){
+          .on('complete', function () {
+
             console.log('Job', job.id, 'with name', job.data.name, 'is done');
-      
+
             chats.push(job.data.chat);
 
             pubsub.publish('CHAT_CHANNEL', { messageSent: job.data.chat })
 
           })
-          .on('failed', function (){
+          .on('failed', function () {
             console.log('Job', job.id, 'with name', job.data.name, 'has failed');
           })
-      
+
         job.save();
       }
+
+      jobs.process('new job', function (job, done) {
       
-      jobs.process('new job', function (job, done){
         /* carry out all the job function here */
-        console.log('processing job here - persist to mongo, update cache, send email/push');
-        done && done();
+        console.log('processing new incoming message:');
+
+        setTimeout(function () {
+
+          console.log('persisted to mongo, updated cache, sent async to microservice for email/push');
+
+          done && done();
+
+        }, 3000);
+
+        
       });
-      
+
       return chat
 
     }
   },
 
+
+
+
+
   Subscription: {
-    
+
     messageSent: {
       subscribe: (root, args, { pubsub }) => {
         return pubsub.asyncIterator(CHAT_CHANNEL)
