@@ -8,7 +8,10 @@
             <div class="row" v-if="entered">
               <div class="col-md-12">
                 <div class="card">
-                  <div class="card-header">Chatbox</div>
+                  <div class="card-header">
+                     {{username}}
+                    
+                    Chatbox</div>
                   <div class="card-body">
                     <!-- messages  here -->
 
